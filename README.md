@@ -1,2 +1,2 @@
-# Investigaci-n_grupal_1
+# Investigacion_grupal_1
 Desafío NoSQL
