@@ -1,2 +1,2 @@
 faker
-gqlalchemy
+neo4j
