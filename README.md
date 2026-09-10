@@ -2,7 +2,7 @@
 Desafío NoSQL
 
 
-###Guía basica:
+### Guía basica:
 
 Piensa en esto como si estuvieras inventando una ciudad falsa llena de gente y bancos, solo para que el sistema tenga algo que investigar.
 
