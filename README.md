@@ -1,31 +1,81 @@
 # Investigacion_grupal_1
 Desafío NoSQL
 
+## Cómo correr nuestra base
+### Básicamente lo que buscamos es aclarar cómo ejecutar Memgraph y cargarle los datos del caso FraudeLink que nos tocó
 
-### Guía basica:
+Esta guía la hicimos pata que sirva para Mac o Windows, no importa quién lo corra.
 
-Piensa en esto como si estuvieras inventando una ciudad falsa llena de gente y bancos, solo para que el sistema tenga algo que investigar.
+Consideramos imporatnte aclarar que todos los comandos de abajo se escriben en la Terminal 
+Se corre una linea a la vez y se le da enter después de cada una, la última dura bastante porque crea los datos
 
-Lo que vamos a inventar son cinco tipos de "cosas" (los nodos)
+### Nota: Lo que se necesita tener instalado antes
 
-Clientes: personas ficticias, cada una con un nombre inventado. Por ejemplo, "María González".
-Cuentas: cada cliente tiene una o varias cuentas bancarias, como si fueran sus tarjetas o cuentas de ahorro.
-Dispositivos: el celular o computadora desde donde cada quien se conecta a hacer sus transacciones.
-IPs: la dirección de internet desde donde se conectan (como la ubicación digital de dónde entran).
-Comercios: negocios donde la gente paga, como una tienda o restaurante.
+Docker Desktop
+Python 3
+Git (o GitHub Desktop)
 
-Lo que conecta a estas cosas entre sí (las relaciones)
+### Si todavía no tienes el repositorio en tu compu
 
-Un cliente posee una cuenta. Esa cuenta usa cierto dispositivo. Ese dispositivo se conecta desde cierta IP. Una cuenta le transfiere dinero a otra cuenta. Y una cuenta paga en cierto comercio.
+Si ya lo tienes clonado (como el equipo), te saltas este paso.
 
-Por qué inventamos esto en vez de usar datos reales
+En la Terminal:
 
-Porque no existe un dataset público de fraude bancario real (por razones obvias de privacidad), así que la tarea del curso es que ustedes mismos "actúen" cómo se vería ese mundo, con un script que lo crea automáticamente: en vez de escribir 10,000 personas a mano, un programa las genera todas en segundos con nombres, cuentas y conexiones al azar, pero de forma controlada.
+```
+git clone https://github.com/Jossygg11/Investigacion_grupal_1.git
+cd Investigacion_grupal_1
+```
 
-La parte clave: escondemos "pistas de fraude" a propósito
+El nombre varía de compu a compu cabe recalcar
 
-De los 10,000 clientes y sus conexiones, la mayoría van a ser completamente normales, sin nada raro. Pero a propósito vamos a meter algunos patrones sospechosos escondidos, por ejemplo: 50 cuentas distintas que comparten el mismo dispositivo (como si una sola persona controlara 50 cuentas falsas), o un grupo de cuentas que se transfieren dinero en círculo (A le manda a B, B le manda a C, C le manda de vuelta a A), que es una forma clásica de lavado de dinero.
+### Ejecutar Memgraph
 
-Para qué sirve todo esto al final
+Primero hay que asegurarse de estar parado en la carpeta del repositorio. Si nuestra Terminal no está ahí, entramos con:
 
-Una vez que el script mete a todos estos "personajes falsos" dentro de Memgraph, ustedes van a escribir consultas que busquen esos patrones escondidos, exactamente como lo haría un investigador de fraude real. La gracia es que el script sabe dónde escondió las pistas, así que después pueden confirmar si sus consultas realmente las encontraron.
+```
+cd /ruta/donde/tengas/Investigacion_grupal_1
+```
+Está general porque como ya dijimos, es distinto de compu a compu, hay que revisar donde se guardó al clonarla
+
+Luego se corre, recordar que todo en la consola
+
+```
+docker compose up -d
+```
+
+La primera vez tarda varios minutos porque baja las imágenes de internet. Después de eso queda corriendo en segundo plano, no hace falta repetirlo cada vez a menos que reinicies la compu.
+
+### Instalar lo que usa el script de Python
+
+En la Terminal, entrá a la carpeta de datos:
+
+```
+cd datos_sinteticos
+pip install -r requirements.txt
+```
+
+### Correr el script que carga los datos
+
+Sin salir de esa misma carpeta, en la Terminal:
+
+```
+python3 Datos_proyecto_bases_final.py
+```
+
+Este script mete todos los nodos y relaciones del caso a Memgraph. Tiene una semilla fija, o sea que a cualquiera que lo corra le va a salir exactamente el mismo grafo. Tarda un rato, recordar que son más de 70 mil relaciones entre nodos, no es instantáneo, y muestra mensajes de progreso en la misma Terminal mientras corre.
+
+### Para comprobar que sí cargó
+
+Este paso ya no es en la Terminal, es en el navegador. hay que abrir nuestro Chrome o Safari, y pegamos localhost:3000 
+
+Posterior corremos este código en el panel de memgraph
+
+```cypher
+MATCH (n) RETURN count(n)
+```
+
+Tiene que dar como 12,600 y algo, y aquí ya se confirma que funcionó
+
+### Por si algo falla
+
+Si pip te da error de que no encuentra Python o usa uno raro, revisá en la Terminal con `which python3` cuál está usando antes de instalar nada. En Windows todo es igual, solo hay que tener activado WSL 2 para que Docker funcione 
