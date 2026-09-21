@@ -1,5 +1,4 @@
-  Carpeta de código fuente
-// ============================================================
+ // ============================================================
 // FraudeLink
 // XS0131 - Grupo 8 (Grafos, Memgraph)
 // ============================================================
@@ -32,7 +31,6 @@ RETURN count(r) AS total_relaciones;
 // Como grupo vamos a requerir el uso de "dispositivo" e "IP". En el grafo son dos relaciones distintas y a dos saltos de distancia:
 // El flujo ses así Cliente posee una Cuenta, esa Cuenta usa un Dispositivo, y ese Dispositivo se conecta desde una IP
 
-// Flujo que sabemos que debe de seguir
 // Cliente -[:POSEE]-> Cuenta -[:USA_DISPOSITIVO]-> Dispositivo -[:CONECTA_DESDE]-> IP
 
 // Importante tenemos quye notar como de cuenta a dispositivo hay un salto y de cuenta a ip hay dos saltos
@@ -110,8 +108,4 @@ RETURN size(cuentas_dispositivo) AS total_dispositivo,
 
 // Eso confirma la hipótesis: el dispositivo fraudulento y la IP fraudulenta son, literalmente, el mismo grupo de 50 cuentas
 
-RETURN ip.direccion AS ip_compartida,
-       size(clientes) AS num_clientes_distintos,
-       clientes,
-       cuentas
-ORDER BY num_clientes_distintos DESC;
+
