@@ -80,18 +80,34 @@ RETURN d.id AS dispositivo,
 ORDER BY num_clientes_distintos DESC;
 
 // Parte B IPs compartidas
+//En el siguiente codigo lo que hacemos es filtrar falsos positivos y retorna el ip sospechoso, el id del dispositivo
+//el conteo total y la lista de cuentas afectadas
 
-// Muy similar a lo que hicimos en la Parte A, pero con un salto extra "CONECTA_DESDE" para llegar hasta la IP
-// nos salen 885 filas ya que es normal que cada celular está conectado a varias IPS distintas
+//Descarta cualquier grupo menor a 12 clientes, ya que, 12 es el limite de conexiones normales por IP
 
-MATCH (cli:Cliente)-[:POSEE]->(cta:Cuenta)-[:USA_DISPOSITIVO]->(:Dispositivo)-[:CONECTA_DESDE]->(ip:IP)
-WITH ip, collect(DISTINCT cli.id) AS clientes, collect(DISTINCT cta.id) AS cuentas
-WHERE size(clientes) > 14  // mismo umbral, por consistencia con la Parte A
-RETURN ip.direccion AS ip_compartida,
-       size(clientes) AS num_clientes_distintos,
-       clientes,
-       cuentas
-ORDER BY num_clientes_distintos DESC;
+//Filtra y promedia que clientes por dispositivo sea mayor a 12. Eliminando asi redes publicas normales y dejando casos de fraude
+
+MATCH (cli:Cliente)-[:POSEE]->(cta:Cuenta)-[:USA_DISPOSITIVO]->(disp:Dispositivo)-[:CONECTA_DESDE]->(ip:IP) //recorre la cadena
+WITH ip, disp,           //agrupa por ip y dispositivo
+     count(DISTINCT cli) AS num_clientes, 
+     collect(DISTINCT cli.id) AS clientes, 
+     collect(DISTINCT cta.id) AS cuentas,
+     count(DISTINCT disp) AS num_dispositivos,
+     toFloat(count(DISTINCT cli)) / count(DISTINCT disp) AS promedio_clientes_por_dispositivo // mide la densidad de clientes por dispositivo
+WHERE num_clientes > 12                     // restringe que el promedio de clientes por dispositivo supere un umbral aleatorio y
+  AND promedio_clientes_por_dispositivo > 12 // descarta redes wifi publicas donde muchas identidades usan distintos dispositivos
+RETURN ip.direccion AS ip_sospechosa,       
+       num_clientes,
+       disp.id AS dispositivo,
+       num_dispositivos,
+       size(cuentas) AS total_cuentas,
+       round(promedio_clientes_por_dispositivo) AS promedio_por_disp,
+       cuentas,
+       clientes
+ORDER BY num_clientes DESC;
+
+// podemos ver que desde la misma ip, 1 dispositivo accedio a 50 cuentas de clientes distintos, lo cual es extremadamente sospechoso 
+
 
 // Verificación cruzada importante que queremos verificar 
 // las 50 cuentas del dispositivo fraudulento son las mismas 50 cuentas que comparten la IP fraudulenta?
