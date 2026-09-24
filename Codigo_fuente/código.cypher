@@ -140,3 +140,30 @@ RETURN a.id AS cuenta_origen,
        [n IN nodes(camino) | n.id] AS ruta_cuentas,
        [r IN relationships(camino) | r.monto] AS montos
 LIMIT 10;
+
+// --- Parte B ahora terminamos con la cadena lineal no necesariamente vuelve al origen
+MATCH camino = (a:Cuenta)-[:TRANSFIERE_A*3..4]->(b:Cuenta)
+WHERE a <> b  // descarta los casos que ya cubre la Parte A (ciclos)
+RETURN a.id AS cuenta_origen,
+       b.id AS cuenta_destino,
+       length(camino) AS num_saltos,
+       [n IN nodes(camino) | n.id] AS ruta_cuentas,
+       [r IN relationships(camino) | r.monto] AS montos
+// ORDER BY num_saltos DESC ESTO GENERA PROBLEMAS muy importante ya que no nos dio el almacenadiento lo cuals es un tema a poder en nuestro informe
+// nos salió "Memory limit exceeded"
+LIMIT 10;
+
+// Nota de rendimiento, los caminos de rango variable (*) son más lentos que un salto fijo. 
+// La Parte A tardó 9.06s sobre ~40,000 transferencias
+// La Parte B es más pesada aún (no cierra el ciclo así que hay muchas más combinaciones); si tarda mucho, agregar un filtro de monto mínimo
+
+
+// Lista todos los algoritmos MAGE instalados en esta instancia
+CALL mg.procedures()
+YIELD name
+RETURN name
+ORDER BY name
+
+// Resumen para que entendamos más lo que logramos hacer con esta consulta
+// Parte A (ciclo): busca transferencias que salen de una cuenta y, después de 3 a 5 saltos, vuelven a esa misma cuenta. Es el patrón clásico de lavado de dinero (mover plata en círculo para esconder de dónde vino)
+// Parte B (cadena): busca transferencias de 3 a 4 saltos que no necesariamente vuelven al origen, solo una secuencia A→B→C→D
