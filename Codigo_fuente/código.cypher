@@ -63,7 +63,7 @@ RETURN d.dispositivo AS dispositivo,
        d.clientes AS clientes,
        d.cuentas AS cuentas
 
-ORDER BY num_clientes_distintos DESC
+ORDER BY num_clientes_distintos DESC;
 
 
 
@@ -120,8 +120,23 @@ WITH cuentas_dispositivo, collect(cta2.id) AS cuentas_ip
 
 RETURN size(cuentas_dispositivo) AS total_dispositivo,
        size(cuentas_ip) AS total_ip,
-       size([x IN cuentas_dispositivo WHERE x IN cuentas_ip]) AS coinciden
+       size([x IN cuentas_dispositivo WHERE x IN cuentas_ip]) AS coinciden;
 
 // Eso confirma la hipótesis: el dispositivo fraudulento y la IP fraudulenta son, literalmente, el mismo grupo de 50 cuentas
 
+// ---------------------------------------------------------------------------------------------------------------
+// REQUISITO 3 Detectar una cadena o ciclo de transferencias de al menos 3 saltos y explicar por qué es relevante
+// ---------------------------------------------------------------------------------------------------------------
 
+// El requisito pide cadena O ciclo, así que se resuelve con dos
+// consultas: ciclo (vuelve al origen) y cadena abierta (no vuelve).
+// Ojo con el *: es TRANSFIERE_A*3..5, no TRANSFIERE_A3..5, sin el
+// asterisco Cypher no corre la consulta.
+
+// Parte A ciclo en este caso hacemos la cuenta de origen y la de cierre son la misma
+MATCH camino = (a:Cuenta)-[:TRANSFIERE_A*3..5]->(a)
+RETURN a.id AS cuenta_origen,
+       length(camino) AS num_saltos,
+       [n IN nodes(camino) | n.id] AS ruta_cuentas,
+       [r IN relationships(camino) | r.monto] AS montos
+LIMIT 10;
