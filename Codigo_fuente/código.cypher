@@ -167,3 +167,20 @@ ORDER BY name
 // Resumen para que entendamos más lo que logramos hacer con esta consulta
 // Parte A (ciclo): busca transferencias que salen de una cuenta y, después de 3 a 5 saltos, vuelven a esa misma cuenta. Es el patrón clásico de lavado de dinero (mover plata en círculo para esconder de dónde vino)
 // Parte B (cadena): busca transferencias de 3 a 4 saltos que no necesariamente vuelven al origen, solo una secuencia A→B→C→D
+
+// Ciclos donde TODOS los montos superan $5,000 (el máximo posible en una
+// transferencia normal). Si aparece, el ciclo viene del generador de fraude
+MATCH camino = (a:Cuenta)-[:TRANSFIERE_A*3..5]->(a) // *3..5 nos dice que vamos a ver  de 3 a 5 transferencias seguidas
+                                                    // (a)...(a) obliga a que el camino termine donde empezó (eso es lo que lo hace un ciclo)
+WHERE ALL(r IN relationships(camino) WHERE r.monto > 5000)
+RETURN a.id AS cuenta_origen,
+       length(camino) AS num_saltos,
+       [n IN nodes(camino) | n.id] AS ruta_cuentas,
+       [r IN relationships(camino) | r.monto] AS montos
+LIMIT 20;
+
+// Util ya que usando el monto como prueba (una transferencia normal nunca supera $5,000) por lo que la tomamos como "sospechoso"
+
+// Por qué 7 es el mínimo, esto es muy importante tenerlo en cuenta, no el total: el filtro exige que TODAS la transferencias del ciclo superen $5,000, pero los ciclos de fraude
+// reales se generaron con montos entre $1,000 y $9,000, así que algunos ciclos de fraude quedan por debajo de $5,000 y no pasan el filtro.
+// Siguen siendo fraude, solo que no se distinguen del ruido con este método. Por eso 7 es el piso garantizado, no los 20 completos.
