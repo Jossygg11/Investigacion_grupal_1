@@ -184,3 +184,47 @@ LIMIT 20;
 // Por qué 7 es el mínimo, esto es muy importante tenerlo en cuenta, no el total: el filtro exige que TODAS la transferencias del ciclo superen $5,000, pero los ciclos de fraude
 // reales se generaron con montos entre $1,000 y $9,000, así que algunos ciclos de fraude quedan por debajo de $5,000 y no pasan el filtro.
 // Siguen siendo fraude, solo que no se distinguen del ruido con este método. Por eso 7 es el piso garantizado, no los 20 completos.
+
+// ---------------------------------------------------------------------------------------------------------------
+// REQUISITO 4: PageRank sobre las cuentas
+// PageRank es un algoritmo iterativo: le asigna a cada nodo un "puntaje de importancia"
+//---------------------------------------------------------------------------------------------------------------
+
+
+// Le asigna a cada nodo un "puntaje de importancia" basado en cuántos nodos le apuntan 
+// qué tan importantes son esos nodos que le apuntan (no es solo contar conexiones)
+CALL pagerank.get()
+YIELD node, rank
+
+// Filtramos porque PageRank corre sobre TODOS los nodos del grafo
+// (Cliente, Dispositivo, IP, Comercio también), pero acá solo nos interesa el ranking entre Cuentas
+WHERE node:Cuenta
+RETURN node.id AS cuenta, rank
+ORDER BY rank DESC
+LIMIT 10;
+
+// Importante tomar en cuenta con este punto
+// PageRank debería destacar cuentas "importantes" del fraude, pero acá
+// todas salieron casi iguales nadie destacó, porque el fraude que sembramos
+// es muy poco comparado con las 40,000 transferencias aleatorias. No encontró el fraude, para nosotros como grupo nos parece bien ya que no vamos a forzar a los datos
+
+//Al no haber una diferencia significativa vemos que no hay un patrón para ver si alguni es má importante
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
