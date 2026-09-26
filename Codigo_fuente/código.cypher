@@ -210,6 +210,37 @@ LIMIT 10;
 
 //Al no haber una diferencia significativa vemos que no hay un patrón para ver si alguni es má importante
 
+// Requisito 4, grado simple: para comparar contra PageRank
+
+MATCH (c:Cuenta)
+OPTIONAL MATCH (c)-[t:TRANSFIERE_A]-()
+RETURN c.id AS cuenta, count(t) AS grado_transferencias
+ORDER BY grado_transferencias DESC
+LIMIT 10;
+
+// Aquí lo que buscamos es una verificación
+// ¿Alguna de las cuentas con más transferencias (top 10 por grado) es
+// también una de las 50 cuentas sospechosas del dispositivo fraudulento?
+
+MATCH (cta:Cuenta)-[:USA_DISPOSITIVO]->(:Dispositivo {id: "DISP_FRAUDE_00001"}) // Encuentra las cuentas conectadas al dispositivo fraudulento sembrado
+WITH collect(cta.id) AS sospechosas // Las guarda en una sola list esto para poder usarla más abajo en la comparación
+
+MATCH (c:Cuenta)
+OPTIONAL MATCH (c)-[t:TRANSFIERE_A]-() // Por cada cuenta, busca todas sus transferencias (entrantes y salientes).
+                                       // OPTIONAL MATCH evita que se pierdan las cuentas sin ninguna transferencia
+WITH sospechosas, c.id AS cuenta_top_grado, count(t) AS grado_transferencias // Cuenta cuántas transferencias tiene cada cuenta
+ORDER BY grado_transferencias DESC
+LIMIT 10 // Se queda solo con las 10 cuentas más activas
+
+RETURN cuenta_top_grado, grado_transferencias, // Compara cada una de esas 10 contra la lista de sospechosas:
+                                               // true si coincide, false si no
+       cuenta_top_grado IN sospechosas AS es_sospechosa_dispositivo;
+
+// nota devuelve false
+// Resultado: ninguna de las 10 cuentas con más transferencias coincide con
+// las 50 sospechosas del dispositivo. El grado alto es ruido estadístico
+// normal, no señal de fraude en este dataset.
+
 
 
 
