@@ -126,7 +126,7 @@ RETURN size(cuentas_dispositivo) AS total_dispositivo,
 // Eso confirma la hipótesis: el dispositivo fraudulento y la IP fraudulenta son, literalmente, el mismo grupo de 50 cuentas
 
 // ---------------------------------------------------------------------------------------------------------------
-// REQUISITO 3 Detectar una cadena o ciclo de transferencias de al menos 3 saltos y explicar por qué es relevante
+// REQUISITO 3 Detectar una cadena o ciclo de transferencias de al menos 3 saltos y explicar por qué es relevante 
 // ---------------------------------------------------------------------------------------------------------------
 
 // El requisito pide cadena O ciclo, así que se resuelve con dos
