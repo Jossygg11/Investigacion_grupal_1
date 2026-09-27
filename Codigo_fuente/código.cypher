@@ -34,42 +34,42 @@ RETURN count(camino) AS total_ciclos;
 // --------------------------------------------------------------------------------------------------
 
 // Como grupo vamos a requerir el uso de "dispositivo" e "IP". En el grafo son dos relaciones distintas y a dos saltos de distancia:
-// El flujo ses así Cliente posee una Cuenta, esa Cuenta usa un Dispositivo, y ese Dispositivo se conecta desde una IP
+// El flujo va a ser el siguiente Cliente posee una Cuenta, esa Cuenta usa un Dispositivo, y ese Dispositivo se conecta desde una IP
 
 // Cliente -[:POSEE]-> Cuenta -[:USA_DISPOSITIVO]-> Dispositivo -[:CONECTA_DESDE]-> IP
 
-// Importante tenemos quye notar como de cuenta a dispositivo hay un salto y de cuenta a ip hay dos saltos
+// Importante tenemos que notar como de cuenta a dispositivo hay un salto y de cuenta a ip hay dos saltos
 
 
-// Parte A dispositivos compartidos
+// Parte A dispositivos compartidos (versión estadística, con desviación estándar)
+
+// el criterio de 3 desviaciones estándar es un principio estadístico general para detectar anomalías esto visto en cursos avanzados de la carrera, aplica aquí porque la asignación de dispositivos es aleatoria
+
+// Query de diagnóstico: muestra el promedio, la desviación y el umbral real
+// promedio = 3.52, desviación = 2.05, umbral_3sigma = 9.66
 
 MATCH (cli:Cliente)-[:POSEE]->(cta:Cuenta)-[:USA_DISPOSITIVO]->(d:Dispositivo)
-// Agrupamos por cada dispositivo, juntando en una lista todos los clientes DISTINTOS que lo usaron
-
-// El DISTINCT notamos que es importante ya evita contar dos veces a un cliente que tiene varias cuentas en el mismo dispositivo
-WITH d, collect(DISTINCT cli.id) AS clientes, collect(DISTINCT cta.id) AS cuentas
-
-// el criterio de 3 desviaciones estándar es un principio estadístico general para detectar anomalías, aplica aquí porque la asignación de dispositivos es aleatoria
-WITH collect({dispositivo: d.id, num: size(clientes), clientes: clientes, cuentas: cuentas}) AS datos
-// Promedio de clientes distintos por dispositivo, sobre todos los dispositivos
-WITH datos, reduce(s = 0, x IN datos | s + x.num) / size(datos) AS promedio 
-
-WITH datos, promedio, // Desviación estándar: qué tanto varían los dispositivos respecto al promedio
+WITH d, collect(DISTINCT cli.id) AS clientes
+WITH collect({dispositivo: d.id, num: size(clientes)}) AS datos
+WITH datos, toFloat(reduce(s = 0, x IN datos | s + x.num)) / size(datos) AS promedio
+WITH datos, promedio,
      sqrt(reduce(s = 0.0, x IN datos | s + (x.num - promedio)^2) / size(datos)) AS desviacion
+RETURN promedio, desviacion, promedio + 3*desviacion AS umbral_3sigma;
 
-UNWIND datos AS d // Volvemos a separar la lista en filas individuales para poder filtrar
-
+// aplica el filtro con el umbral corregido que sería con el promedio + 3 veces la des.vest
+MATCH (cli:Cliente)-[:POSEE]->(cta:Cuenta)-[:USA_DISPOSITIVO]->(d:Dispositivo)
+WITH d, collect(DISTINCT cli.id) AS clientes, collect(DISTINCT cta.id) AS cuentas
+WITH collect({dispositivo: d.id, num: size(clientes), clientes: clientes, cuentas: cuentas}) AS datos
+WITH datos, toFloat(reduce(s = 0, x IN datos | s + x.num)) / size(datos) AS promedio
+WITH datos, promedio,
+     sqrt(reduce(s = 0.0, x IN datos | s + (x.num - promedio)^2) / size(datos)) AS desviacion
+UNWIND datos AS d
 WITH d, promedio, desviacion
-
-// Se marca como sospechoso lo que está muy por encima de lo normal (más de 3 desviaciones estándar sobre el promedio)
-WHERE d.num > promedio + 3 * desviacion
-RETURN d.dispositivo AS dispositivo,
-       d.num AS num_clientes_distintos,
-       d.clientes AS clientes,
-       d.cuentas AS cuentas
-
+WHERE d.num > promedio + 3 * desviacion // aqui es donde aplicamos el criterio que mencionamos arriba 
+RETURN d.dispositivo AS dispositivo, d.num AS num_clientes_distintos
 ORDER BY num_clientes_distintos DESC;
 
+// Con esto como grupo conseguimos encontrar el dispositivo de fraude más lo que es 6 dispositivos que pasaron nuestro umbral creado, pero eso no está mal, son 6 datos que deciudimos considerar ruido
 
 
 // Parte A que decidimos hacer de una forma más sencilla de esta forma basada en lo observado anteriormente definimos un umbral de 14 
