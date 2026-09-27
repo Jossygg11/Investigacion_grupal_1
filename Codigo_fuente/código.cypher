@@ -85,33 +85,29 @@ RETURN d.id AS dispositivo,
 ORDER BY num_clientes_distintos DESC;
 
 // Parte B IPs compartidas
-//En el siguiente codigo lo que hacemos es filtrar falsos positivos y retorna el ip sospechoso, el id del dispositivo
-//el conteo total y la lista de cuentas afectadas
+// Filtramos falsos positivos y retornamos la IP sospechosa, cuántos dispositivos
+// distintos se conectan a ella, y el promedio de clientes por cada uno de esos dispositivos
+// Descarta cualquier grupo con 12 clientes o menos, ya que consideramos 12 el límite de conexiones normales por IP
+// Filtra que el promedio de clientes por dispositivo sea mayor a 12, para eliminar redes públicas normales y dejar casos de fraude
 
-//Descarta cualquier grupo menor a 12 clientes, ya que, 12 es el limite de conexiones normales por IP
-
-//Filtra y promedia que clientes por dispositivo sea mayor a 12. Eliminando asi redes publicas normales y dejando casos de fraude
-
-MATCH (cli:Cliente)-[:POSEE]->(cta:Cuenta)-[:USA_DISPOSITIVO]->(disp:Dispositivo)-[:CONECTA_DESDE]->(ip:IP) //recorre la cadena
-WITH ip, disp,           //agrupa por ip y dispositivo
-     count(DISTINCT cli) AS num_clientes, 
-     collect(DISTINCT cli.id) AS clientes, 
+MATCH (cli:Cliente)-[:POSEE]->(cta:Cuenta)-[:USA_DISPOSITIVO]->(disp:Dispositivo)-[:CONECTA_DESDE]->(ip:IP) // recorre la cadena
+WITH ip,                                    // agrupa SOLO por ip 
+     count(DISTINCT cli) AS num_clientes,
+     collect(DISTINCT cli.id) AS clientes,
      collect(DISTINCT cta.id) AS cuentas,
-     count(DISTINCT disp) AS num_dispositivos,
-     toFloat(count(DISTINCT cli)) / count(DISTINCT disp) AS promedio_clientes_por_dispositivo // mide la densidad de clientes por dispositivo
-WHERE num_clientes > 12                     // restringe que el promedio de clientes por dispositivo supere un umbral aleatorio y
-  AND promedio_clientes_por_dispositivo > 12 // descarta redes wifi publicas donde muchas identidades usan distintos dispositivos
-RETURN ip.direccion AS ip_sospechosa,       
+     count(DISTINCT disp) AS num_dispositivos
+WITH ip, num_clientes, clientes, cuentas, num_dispositivos,
+     toFloat(num_clientes) / num_dispositivos AS promedio_clientes_por_dispositivo
+WHERE num_clientes > 12
+  AND promedio_clientes_por_dispositivo > 12
+RETURN ip.direccion AS ip_sospechosa,
        num_clientes,
-       disp.id AS dispositivo,
        num_dispositivos,
        size(cuentas) AS total_cuentas,
        round(promedio_clientes_por_dispositivo) AS promedio_por_disp,
        cuentas,
        clientes
 ORDER BY num_clientes DESC;
-
-// podemos ver que desde la misma ip, 1 dispositivo accedio a 50 cuentas de clientes distintos, lo cual es extremadamente sospechoso 
 
 
 // Verificación cruzada importante que queremos verificar 
