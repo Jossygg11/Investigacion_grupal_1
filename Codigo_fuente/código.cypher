@@ -21,6 +21,11 @@ RETURN count(n) AS total_nodos;
 MATCH ()-[r]->()
 RETURN count(r) AS total_relaciones;
 
+// Cuántos ciclos de 3 a 5 saltos existen en total en el grafo
+MATCH camino = (a:Cuenta)-[:TRANSFIERE_A*3..5]->(a)
+RETURN count(camino) AS total_ciclos;
+
+
 
 // --------------------------------------------------------------------------------------------------
 // REQUISITO 2: Encontrar cuentas que comparten dispositivo o IP con varias identidades distintas
