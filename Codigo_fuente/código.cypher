@@ -186,30 +186,33 @@ LIMIT 20;
 // reales se generaron con montos entre $1,000 y $9,000, así que algunos ciclos de fraude quedan por debajo de $5,000 y no pasan el filtro.
 // Siguen siendo fraude, solo que no se distinguen del ruido con este método. Por eso 7 es el piso garantizado, no los 20 completos.
 
-// ---------------------------------------------------------------------------------------------------------------
-// REQUISITO 4: PageRank sobre las cuentas
-// PageRank es un algoritmo iterativo: le asigna a cada nodo un "puntaje de importancia"
-//---------------------------------------------------------------------------------------------------------------
 
-
-// Le asigna a cada nodo un "puntaje de importancia" basado en cuántos nodos le apuntan 
-// qué tan importantes son esos nodos que le apuntan (no es solo contar conexiones)
-CALL pagerank.get()
-YIELD node, rank
-
-// Filtramos porque PageRank corre sobre TODOS los nodos del grafo
-// (Cliente, Dispositivo, IP, Comercio también), pero acá solo nos interesa el ranking entre Cuentas
-WHERE node:Cuenta
-RETURN node.id AS cuenta, rank
-ORDER BY rank DESC
-LIMIT 10;
-
-// Importante tomar en cuenta con este punto
-// PageRank debería destacar cuentas "importantes" del fraude, pero acá
-// todas salieron casi iguales nadie destacó, porque el fraude que sembramos
+// --------------------------------------------------------------------------------------------------------------------------
+// REQUISITO 4: "Calcular o a
+// Importante tomar en cuenta con este punto PageRank debería destacar cuentas "importantes" del fraude, pero acá
+// todas salieron casi iguales nadie destacó, porque el fraude que como grupo sembramos
 // es muy poco comparado con las 40,000 transferencias aleatorias. No encontró el fraude, para nosotros como grupo nos parece bien ya que no vamos a forzar a los datos
 
-//Al no haber una diferencia significativa vemos que no hay un patrón para ver si alguni es má importante
+// Al no haber una diferencia significativa vemos que no hay un patrón para ver si alguni es má importante
+
+// Ahora vamos a ver si alguna se relaciona con nuestro diospositivo de fraude
+
+// Verificación cruzada dinámica de PageRank
+MATCH (cta:Cuenta)-[:USA_DISPOSITIVO]->(:Dispositivo {id: "DISP_FRAUDE_00001"}) // Busca todas las cuentas conectadas al dispositivo fraudulento que sembramos al inicio
+WITH collect(cta.id) AS sospechosas // Guarda esas cuentas sospechosas en una sola lista
+CALL pagerank.get() // Corre PageRank sobre todo el grafo (le da un "puntaje de importancia" a cada nodo, sin importar el tipo)
+YIELD node, rank
+WHERE node:Cuenta // Filtramos porque PageRank corrió sobre TODOS los nodos los cuales eran Cliente, Dispositivo, IP, Comercio, pero solo nos interesan las Cuentas
+WITH sospechosas, node.id AS cuenta, rank // Renombramos las columnas y arrastramos "sospechosas" 
+ORDER BY rank DESC // con esto ordenamos las más importantes según el page rank
+LIMIT 10
+RETURN cuenta, rank, cuenta IN sospechosas AS es_sospechosa_dispositivo; // Por cada una de esas 10, mostramos su puntaje, y comparamos si su ID
+                                                                         // está dentro de la lista de sospechosas: true si coincide, false si no
+
+// Del top 10 encontramos 1 de 10 que devuelve true (CLI_02858_CTA_2, puesto 5) el cuál es una cuenta de fraude conectada al dispositivo fraudulento
+// Resultado: 1 coincidencia sobre 10, pero es lo esperable por puro azar como tenemos 50 sospechosas de 6,065 cuentas, el valor esperado en una muestra
+// de 10 es 0.08. Pero cabe recalcar que no es evidencia de que PageRank aísle el fraude
+
 
 // Requisito 4, grado simple: para comparar contra PageRank
 
@@ -224,23 +227,27 @@ LIMIT 10;
 // también una de las 50 cuentas sospechosas del dispositivo fraudulento?
 
 MATCH (cta:Cuenta)-[:USA_DISPOSITIVO]->(:Dispositivo {id: "DISP_FRAUDE_00001"}) // Encuentra las cuentas conectadas al dispositivo fraudulento sembrado
-WITH collect(cta.id) AS sospechosas // Las guarda en una sola list esto para poder usarla más abajo en la comparación
+WITH collect(cta.id) AS sospechosas // Las guarda en una sola lista, esto para poder usarla más abajo en la comparación
 
 MATCH (c:Cuenta)
 OPTIONAL MATCH (c)-[t:TRANSFIERE_A]-() // Por cada cuenta, busca todas sus transferencias (entrantes y salientes).
                                        // OPTIONAL MATCH evita que se pierdan las cuentas sin ninguna transferencia
-WITH sospechosas, c.id AS cuenta_top_grado, count(t) AS grado_transferencias // Cuenta cuántas transferencias tiene cada cuenta
+WITH sospechosas, c.id AS cuenta, count(t) AS grado_transferencias // Cuenta cuántas transferencias tiene cada cuenta
 ORDER BY grado_transferencias DESC
 LIMIT 10 // Se queda solo con las 10 cuentas más activas
 
-RETURN cuenta_top_grado, grado_transferencias, // Compara cada una de esas 10 contra la lista de sospechosas:
-                                               // true si coincide, false si no
-       cuenta_top_grado IN sospechosas AS es_sospechosa_dispositivo;
+RETURN cuenta, grado_transferencias, // Compara cada una de esas 10 contra la lista de sospechosas:
+                                     // true si coincide, false si no
+       cuenta IN sospechosas AS es_sospechosa_dispositivo;
 
-// nota devuelve false
-// Resultado: ninguna de las 10 cuentas con más transferencias coincide con
-// las 50 sospechosas del dispositivo. El grado alto es ruido estadístico
-// normal, no señal de fraude en este dataset.
+// Resultado: 0 de 10 coincide con las 50 sospechosas del dispositivo
+// Igual que con PageRank, esto es lo esperable por puro azar: con 50 sospechosas de 6,065 cuentas, la probabilidad de que ninguna de las 10
+// del top coincida es más del 90%. El grado alto es ruido estadístico normal, no señal de fraude en este dataset
+
+// Nota importante: PageRank encontró 1 de 10 y grado encontró 0 de 10, pero esto no significa que PageRank sea mejor. Los dos
+// resultados son igual de compatibles con puro azar (0.08 esperado en PageRank, 0 esperado en grado). Ninguno se aleja de lo esperable, así
+// que las dos técnicas confirman lo mismo: ni la importancia recursiva ni el volumen de transacciones tienen relación real con el fraude en
+// este dataset. El grado alto es ruido estadístico normal, no señal de fraude
 
 
 
