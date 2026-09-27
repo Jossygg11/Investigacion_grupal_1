@@ -249,7 +249,24 @@ RETURN cuenta, grado_transferencias, // Compara cada una de esas 10 contra la li
 // que las dos técnicas confirman lo mismo: ni la importancia recursiva ni el volumen de transacciones tienen relación real con el fraude en
 // este dataset. El grado alto es ruido estadístico normal, no señal de fraude
 
+//------------------------------------------------
+// REQUISITO 5: Louvain para detectar comunidades
+//------------------------------------------------
 
+// Requisito 5: buscamos grupos de cuentas que se mandan plata entre sí
+// más de lo normal. No coincidió con las del dispositivo sospechoso,
+// porque mide otra cosa (plata, no dispositivo)
+
+// El algoritmo agrupa nodos que están más conectados entre sí que con
+// el resto del grafo, optimizando una métrica llamada "modularidad"
+CALL community_detection.get()
+YIELD node, community_id
+WHERE node:Cuenta
+RETURN community_id,
+       collect(node.id) AS cuentas,
+       count(node) AS tamano
+ORDER BY tamano DESC
+LIMIT 10;
 
 
 
