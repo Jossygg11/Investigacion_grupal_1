@@ -277,7 +277,11 @@ YIELD node, community_id
 WHERE node:Cuenta AND node.id IN sospechosas
 RETURN node.id AS cuenta, community_id
 ORDER BY community_id;
-
+// Descubrimiento: Louvain sí funciona y encuentra comunidades reales
+// (la más grande tiene 460 cuentas), pero esas comunidades no coinciden
+// con las 50 cuentas sospechosas del dispositivo, que quedaron repartidas
+// en 19 comunidades chiquitas. No es que el algoritmo falló, es que mide
+// una señal distinta (transferencias) a la del dispositivo compartido.
 
 
 
