@@ -268,7 +268,15 @@ RETURN community_id,
 ORDER BY tamano DESC
 LIMIT 10;
 
-
+// Verificación cruzada: ¿las cuentas del dispositivo fraudulento cayeron
+// en la misma comunidad según Louvain?
+MATCH (cta:Cuenta)-[:USA_DISPOSITIVO]->(:Dispositivo {id: "DISP_FRAUDE_00001"})
+WITH collect(cta.id) AS sospechosas
+CALL community_detection.get()
+YIELD node, community_id
+WHERE node:Cuenta AND node.id IN sospechosas
+RETURN node.id AS cuenta, community_id
+ORDER BY community_id;
 
 
 
