@@ -293,7 +293,12 @@ ORDER BY community_id;
 
 MATCH (c1:Cuenta {id: "CLI_02908_CTA_0"}), (c2:Cuenta {id: "CLI_00717_CTA_0"}) // se crean dos variables, ahora con cuentas sospechosas reales
 MATCH camino = (c1)-[:TRANSFIERE_A*BFS..10]->(c2) // busca la cadena de transferencias intermediarias que de c1 a c2
+WITH camino, relationships(camino) AS relaciones //toma cada camino y le extrae sus relaciones 
 
+RETURN [n IN nodes(camino) | n.id] AS camino_cuentas, // recorre todas las cuentas del camino y extrae solo su ids en una lista
+       [r IN relaciones | r.monto] AS montos_transferidos, //recorre cada relacion(transferencia) en relaciones y extrae el monto 
+       length(camino) AS total_saltos, // cantidad total de transferencias intermediarias
+       [n IN nodes(camino)[1..-1] | n.id] AS cuentas_intermediarias;  // elimina la cuenta origen y la final, para asi dejar las intermediarias
 
 
 
