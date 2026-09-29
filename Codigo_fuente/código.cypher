@@ -283,7 +283,16 @@ ORDER BY community_id;
 // en 19 comunidades chiquitas. No es que el algoritmo falló, es que mide
 // una señal distinta (transferencias) a la del dispositivo compartido.
 
+//------------------------------------------------
+// REQUISITO 6: Mostrar el camino entre dos cuentas sospechosas 
+//------------------------------------------------
+//tomando en cuenta el requisito 3, se tomó el ID de cuenta_origen 1 y el ID la cuenta relacionada al final de la cadena, posicion 4
+//para evidenciar los caminos y las cuentas intermediarias que facilitaron las transferencias
 
+//usamos BFS para encontrar la ruta más corta nivel por nivel sin saturar la memoria 
+
+MATCH (c1:Cuenta {id: "CLI_02908_CTA_0"}), (c2:Cuenta {id: "CLI_00717_CTA_0"}) // se crean dos variables, ahora con cuentas sospechosas reales
+MATCH camino = (c1)-[:TRANSFIERE_A*BFS..10]->(c2) // busca la cadena de transferencias intermediarias que de c1 a c2
 
 
 
