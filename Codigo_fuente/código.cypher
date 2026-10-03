@@ -300,6 +300,24 @@ RETURN [n IN nodes(camino) | n.id] AS camino_cuentas, // recorre todas las cuent
        length(camino) AS total_saltos, // cantidad total de transferencias intermediarias
        [n IN nodes(camino)[1..-1] | n.id] AS cuentas_intermediarias;  // elimina la cuenta origen y la final, para asi dejar las intermediarias
 
+// ---------------------------------------------------------------------------
+// REQUISITO 7: consulta de riesgo combinando estructura 
+//(grupo sospechoso del requisito 2) + propiedades (monto total transferido)
+// ---------------------------------------------------------------------------
+
+
+MATCH (cta:Cuenta)-[:USA_DISPOSITIVO]->(d:Dispositivo {id: "DISP_FRAUDE_00001"}) //busca las cuentas que se conectaron desde esa id 
+MATCH (cta)-[t:TRANSFIERE_A]->(:Cuenta) //busca ver esas a cuentas a quién le mandaron plata
+WITH cta.id AS cuenta,
+     count(t) AS num_transferencias, // va a ver cuántas veces enviaron plata
+     round(sum(t.monto)) AS monto_total_enviado // y cuanta plata mandaron
+RETURN cuenta,
+       monto_total_enviado,
+       num_transferencias,
+       round(monto_total_enviado / num_transferencias) AS monto_promedio // va a calcular en promedio cuanta plata mandó 
+                                                                         // basicamente aplica (plata enviada total/ total de transacciones)
+ORDER BY monto_total_enviado DESC // da el orden
+LIMIT 10;
 
 
 
