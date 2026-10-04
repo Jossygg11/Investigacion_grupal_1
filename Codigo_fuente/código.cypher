@@ -69,14 +69,14 @@ WHERE d.num > promedio + 3 * desviacion // aqui es donde aplicamos el criterio q
 RETURN d.dispositivo AS dispositivo, d.num AS num_clientes_distintos
 ORDER BY num_clientes_distintos DESC;
 
-// Con esto como grupo conseguimos encontrar el dispositivo de fraude más lo que es 6 dispositivos que pasaron nuestro umbral creado, pero eso no está mal, son 6 datos que deciudimos considerar ruido
+// Con esto como grupo conseguimos encontrar el dispositivo de fraude más lo que es 6 dispositivos que pasaron nuestro umbral creado, pero eso no está mal, son 6 datos que decidimos considerar ruido
 
 
 // Parte A que decidimos hacer de una forma más sencilla de esta forma basada en lo observado anteriormente definimos un umbral de 14 
 
 MATCH (cli:Cliente)-[:POSEE]->(cta:Cuenta)-[:USA_DISPOSITIVO]->(d:Dispositivo)
 WITH d, collect(DISTINCT cli.id) AS clientes, collect(DISTINCT cta.id) AS cuentas
-WHERE size(clientes) > 14 // Con > 14 queda exactamente el dispositivo fraudulento sembrado a propósito hay que acomodar esto 
+WHERE size(clientes) > 14 // Con > 14 queda exactamente el dispositivo fraudulento
 
 RETURN d.id AS dispositivo,
        size(clientes) AS num_clientes_distintos,
