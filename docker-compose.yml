@@ -2,7 +2,8 @@ version: "3.8"
 
 services:
   memgraph:
-    image: memgraph/memgraph-mage:latest
+    # Memgraph 3.12.0 con MAGE, la version con la que se midieron los tiempos
+    image: memgraph/memgraph-mage:3.12.0
     container_name: fraudelink-memgraph
     ports:
       - "7687:7687"   # Puerto para conexiones Cypher (Bolt protocol)
@@ -13,7 +14,8 @@ services:
     command: ["--log-level=TRACE"]
 
   lab:
-    image: memgraph/lab:latest
+    # Memgraph Lab 3.12.1 (numera aparte de Memgraph, no es un error)
+    image: memgraph/lab:3.12.1
     container_name: fraudelink-lab
     ports:
       - "3000:3000"   # Interfaz web de Memgraph Lab
