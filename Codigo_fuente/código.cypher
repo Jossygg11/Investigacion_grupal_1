@@ -283,6 +283,16 @@ ORDER BY community_id;
 // en 19 comunidades chiquitas. No es que el algoritmo falló, es que mide
 // una señal distinta (transferencias) a la del dispositivo compartido.
 
+// código para descubrir las cuentas sospechosas a qué comunidad están asosiadas
+// Es un extra por aquello
+
+MATCH (d:Dispositivo {id: "DISP_FRAUDE_00001"})<-[:USA_DISPOSITIVO]-(cta:Cuenta)
+CALL community_detection.get() YIELD node, community_id
+WITH cta, community_id
+WHERE node = cta
+RETURN community_id, count(*) AS cuentas_sospechosas
+ORDER BY cuentas_sospechosas DESC;
+
 //------------------------------------------------
 // REQUISITO 6: Mostrar el camino entre dos cuentas sospechosas 
 //------------------------------------------------
