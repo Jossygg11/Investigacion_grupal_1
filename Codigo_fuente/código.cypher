@@ -202,6 +202,7 @@ MATCH (cta:Cuenta)-[:USA_DISPOSITIVO]->(:Dispositivo {id: "DISP_FRAUDE_00001"}) 
 WITH collect(cta.id) AS sospechosas // Guarda esas cuentas sospechosas en una sola lista
 CALL pagerank.get() // Corre PageRank sobre todo el grafo (le da un "puntaje de importancia" a cada nodo, sin importar el tipo)
 YIELD node, rank
+WITH sospechosas, node, rank
 WHERE node:Cuenta // Filtramos porque PageRank corrió sobre TODOS los nodos los cuales eran Cliente, Dispositivo, IP, Comercio, pero solo nos interesan las Cuentas
 WITH sospechosas, node.id AS cuenta, rank // Renombramos las columnas y arrastramos "sospechosas" 
 ORDER BY rank DESC // con esto ordenamos las más importantes según el page rank
