@@ -91,11 +91,22 @@ Este script mete todos los nodos y relaciones del caso en Memgraph. Tiene una se
 Esto ya no es en la terminal, es en el navegador. Abrí Chrome o Safari y andá a:
 
 ```
-http://localhost:3001
+http://localhost:3000
 ```
 
 Ahí vive Memgraph Lab. En el menú de la izquierda hacé clic en "Query execution", y en la pestaña "Cypher editor" escribí:
 
 ```cypher
 MATCH (n) RETURN count(n)
-... (14 lines left)
+```
+
+Si todo cargó bien, esa consulta tiene que devolver **12,667 nodos**. Si ese número te coincide, la base quedó montada igual que la nuestra y los datos cargaron completos.
+
+### 6. Correr las consultas de los requisitos
+
+Las consultas de los siete requisitos están en `Codigo_fuente/código.cypher`. Abrí ese archivo, copiá cada bloque y pegalo en el "Cypher editor" de Memgraph Lab (el mismo de arriba), en el orden en que aparecen. Cada consulta trae comentarios que explican qué requisito resuelve y qué hace cada parte.
+
+### Si algo sale mal
+
+- **No carga `http://localhost:3000`**: revisá que el contenedor esté arriba con `docker compose ps`. Si no aparece, volvé a correr `docker compose up -d`.
+- **El `count(n)` da un número distinto a 12,667**: casi siempre es que el script de datos no terminó de correr o quedó una carga anterior a medias. Corré `MATCH (n) DETACH DELETE n` en Memgraph Lab para limpiar y volvé a correr el paso 4.
